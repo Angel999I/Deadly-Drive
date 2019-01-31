@@ -1,0 +1,9 @@
+
+Sqlite initialized  [2019-01-31 19:33:02.587031]
+[Deadly] Waiting for client....  [2019-01-31 19:33:02.591024]
+IP: 127.0.0.1
+Client connected  [2019-01-31 19:33:23.518737]
+IP: 127.0.0.1
+Is logged in  [2019-01-31 19:33:42.207834]
+IP: 127.0.0.1
+Asked for directory: dir  [2019-01-31 19:33:44.235653]
