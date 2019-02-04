@@ -1,3 +1,5 @@
-# 
 Server/sqlite/SQLiteDatabaseBrowserPortable
 __pycache__
+Server/Files
+*.ini
+*.log
