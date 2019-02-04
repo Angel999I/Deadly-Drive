@@ -22,6 +22,7 @@ import datetime
 import smtplib
 import sqlite3
 import uuid
+import configparser
 
 from socket import *
 from colorama import Fore, Back, Style
@@ -30,7 +31,6 @@ from threading import Thread, active_count
 from urllib.request import urlopen
 
 FILE_PATH = os.path.dirname(os.path.abspath(__file__))
-print(FILE_PATH)
 
 MAX_FILE_NAME_LENGTH = 255  # Max file name length for file name transfer
 
@@ -66,7 +66,6 @@ class server:
 
         # Server input thread for /exit command
         Thread(target=self.server_input, daemon=True).start()
-        self.dropbox_init()
 
         # Init database_init
         self.database_init()
@@ -75,29 +74,16 @@ class server:
         if not os.path.exists("Files"):
             os.mkdir("Files")
 
+        config = configparser.ConfigParser()
+
+        ip = urlopen('http://ip.42.pl/raw').read().decode()
+        config['Vars'] = {'IPAddress': ip}
+
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)     
+
         # Wait for client connection
         self.wait_client()
-
-    def dropbox_init(self):
-        """
-        Description: Connect to a dropbox app, and upload a text file with the server public ip
-        I/O:
-            Input: None
-            Output: Dropbox: Text IP form
-        """
-        print(f"\n{Fore.YELLOW}Connecting to Dropbox...")
-        try:
-            # Connect to my dropbox and upload text file with his ip
-            client = dropbox.Dropbox("WS8EeYSq1YAAAAAAAAAAXmi29-0rddY0IaViDP1BvrJqBgKysafHokhJ9ETRo5bi")
-            file = open("MY_IP.txt", 'wb+')
-            file.write(urlopen('http://ip.42.pl/raw').read())
-            file.seek(0)
-            client.files_upload(file.read(), '/Server_ip.txt', mode=dropbox.files.WriteMode.overwrite)
-            
-        except:
-            print(f"\n{Fore.RED}Error connecting to Dropbox")
-            return
-        print(f"\n{Fore.GREEN}Connected to Dropbox successfully")
 
     def server_input(self):
         """
@@ -410,7 +396,7 @@ class client_handler:
 
         self.get_client_request()
 
-log_file = open("Log.txt","a")        
+log_file = open("log.log","a")        
 server()
 
         

@@ -127,6 +127,13 @@ class event_handler:
             except:
                 sys.exit()
 
+        elif command == 'test':
+            test = QtWidgets.QFileDialog.getOpenFileName()
+
+        else:
+            self.ui.files_line_edit_commands.setText("")
+
+
     def upload_file(self, filename):
         filename = "Files\\" + filename
 
