@@ -148,7 +148,10 @@ class client_handler:
         """
 
         print(write_log(f"\n{Fore.YELLOW}({self.client_address[0]}) {Fore.RED}Disconnected"))
-        self.client_socket.close()  # Close the socket
+        try:
+            self.client_socket.close()  # Close the socket
+        except:
+            self.client_disconnect()
         sys.exit()  # Close the thread
 
     def login_client(self):
@@ -190,19 +193,28 @@ class client_handler:
         # If email not exist, tell client
         if (db_password == []):
             print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Logged with wrong email"))
-            self.client_socket.send("EMAIL".encode())
+            try:
+                self.client_socket.send("EMAIL".encode())
+            except:
+                self.client_disconnect()
             self.login_client()
 
         # If password not exist, tell client
         if password != db_password[0][1]:
             print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Logged with wrong password"))
-            self.client_socket.send("PASSWORD".encode())
+            try:
+                self.client_socket.send("PASSWORD".encode())
+            except:
+                self.client_disconnect()           
             self.login_client()
 
         # Else log in our client 
-        else:
+        else:   
             print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Is logged in"))
-            self.client_socket.send("TRUE".encode())
+            try:
+                self.client_socket.send("TRUE".encode())
+            except:
+                self.client_disconnect()
 
             # Declare his user id from further use
             self.userid = db_password[0][2]
@@ -299,12 +311,18 @@ class client_handler:
             print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Asked for directory: {request}"))
             requests = os.listdir("Files/" + self.userid + "/")
             if requests == []:
-                self.client_socket.send("EMPTY".encode())
+                try:
+                    self.client_socket.send("EMPTY".encode())
+                except:
+                    self.client_disconnect()
                 self.get_client_request()
             final_file_names = ""
             for name in requests:
                 final_file_names += name + "\n"
-            self.client_socket.send(final_file_names.encode())
+            try:
+                self.client_socket.send(final_file_names.encode())
+            except:
+                self.client_disconnect()
             self.get_client_request()
         # If the client typed upload, download file from client
         elif request_temp[:6] == 'upload':
@@ -326,7 +344,10 @@ class client_handler:
             Input: filename
             Output: File in userid folder
         """
-        data_temp = self.client_socket.recv(100).decode()
+        try:
+            data_temp = self.client_socket.recv(100).decode()
+        except:
+            self.client_disconnect()
         # If the file is not found in client, report
         if data_temp.find("FAILED") != -1:
             print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Tried to upload a file: {filename}"))
@@ -340,13 +361,19 @@ class client_handler:
         print(file_size)
         downloaded_file_size = 0
 
+        try:
         # Send ready mark
-        self.client_socket.send("RDY".encode())
+            self.client_socket.send("RDY".encode())
+        except:
+            self.client_disconnect()
 
         # Count the time
         start_time = time.time()
         while file_size != downloaded_file_size:
-            file.write(self.client_socket.recv(BUFFER_SIZE))
+            try:
+                file.write(self.client_socket.recv(BUFFER_SIZE))
+            except:
+                self.client_disconnect()
             downloaded_file_size = os.path.getsize(filename)
 
         file.close()
@@ -365,31 +392,49 @@ class client_handler:
 
         try:
             open("Files/" + self.userid + "/" + filename,'rb') # Try to open the desired file
-        except:                                                    
-            self.client_socket.send("FILE NOT FOUND".encode())
+        except:  
+            try:                                                  
+                self.client_socket.send("FILE NOT FOUND".encode())
+            except:
+                self.client_disconnect()
             print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Issued wrong file name: {filename}"))
 
             self.get_client_request()
 
-        self.client_socket.send("SUCCESS".encode())             # Send success note to the client
+        try:
+            self.client_socket.send("SUCCESS".encode())             # Send success note to the client
+        except:
+            self.client_disconnect()
 
         file_size = os.path.getsize("Files/" + self.userid + "/" + filename)       # Get the file size
         print(file_size)
-        self.client_socket.send(str(file_size).encode())        # Send the file size to client
+        try:
+            self.client_socket.send(str(file_size).encode())        # Send the file size to client
+        except:
+            self.client_disconnect()
                 
         print(write_log("\n" + Fore.RED + "Transfer file to: " + Fore.GREEN + self.client_address[0] + 
         Fore.RED + "\nFile name: " + Fore.GREEN + filename +
         Fore.RED + "\nFile size: " + Fore.GREEN + str(file_size) + "\n")) # Give information on the file transfer                                        
-                
-        self.client_socket.recv(10)  # Wait for the client to be ready for file transfer
+        
+        try:
+            self.client_socket.recv(10)  # Wait for the client to be ready for file transfer
+        except:
+            self.client_disconnect()
 
         with open("Files/" + self.userid + "/" + filename,'rb') as file: 
-            self.client_socket.sendfile(file)                                            
+            try:
+                self.client_socket.sendfile(file)                                            
+            except:
+                self.client_disconnect()
 
-        self.client_socket.send(b"FINISHED")
+        try:
+            self.client_socket.send(b"FINISHED")
         
-        self.client_socket.recv(10)  # ! For some reason the server is getting additional input, Ignore
-        
+            self.client_socket.recv(10)  # ! For some reason the server is getting additional input, Ignore
+        except:
+            self.client_disconnect()
+
         file.close()
 
         print(write_log(f"\n{Fore.YELLOW}FILE TRANSFERED SUCCESSFULLY"))

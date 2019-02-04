@@ -3,7 +3,7 @@ r"""
 
 Description: Client for the downloading server
 
-I\\O Input: Information from server, Output: File 
+I/O Input: Information from server, Output: File 
 
 Programmer: Omer Benisty
 
@@ -79,7 +79,7 @@ class event_handler:
         self.ui.files_line_edit_commands.returnPressed.connect(self.send_command)
 
         try:
-            file = open("Config\\DEFAULT_IP.txt", "r")
+            file = open("Config/DEFAULT_IP.txt", "r")
         except:
             self.ui.stacked_widget.setCurrentIndex(Page.ip.value)
             return
@@ -135,7 +135,7 @@ class event_handler:
 
 
     def upload_file(self, filename):
-        filename = "Files\\" + filename
+        filename = "Files/" + filename
 
         try:
             file = open(filename, "rb")
@@ -161,7 +161,7 @@ class event_handler:
             self.ui.files_text_edit_console.append("FILE NOT FOUND")
             return     
 
-        filename = "Files\\" + filename
+        filename = "Files/" + filename
 
         file_size = int(self.client.client_socket.recv(100))       # Get file size from server
         self.client.client_socket.send("READY FOR FILE".encode())  # Report the server we are ready for file transfer
@@ -191,7 +191,7 @@ class event_handler:
     def transfer_summary(self, end_time):
         """
         Description: Print a summary on our successful file transfer
-        I\\O:
+        I/O:
             Input: end_time
             Output: end_time. call get_request()
         """
@@ -290,7 +290,7 @@ class event_handler:
                     self.ui.ip_line_edit_ipaddress.setText("")
                     self.ui.ip_line_edit_ipaddress.setPlaceholderText("  One of the numbers is out of range")
 
-        file = open("Config\\DEFAULT_IP.txt", "w")
+        file = open("Config/DEFAULT_IP.txt", "w")
         file.write(ip)
         file.close()
 
