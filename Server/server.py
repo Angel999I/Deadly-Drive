@@ -95,7 +95,7 @@ class server:
         """
 
         while True:
-            if input().lower() == "/exit":
+            if input().lower() == "exit" or input().lower() == "/exit":
                 log_file.close()
                 try:
                     self.client_socket.close()
@@ -110,14 +110,16 @@ class server:
             Input: None
             Output: Print if database was init succesfully
         """
+        global sqlite, cursor
         try:
-            sqlite = sqlite3.connect(FILE_PATH + "/sqlite/accounts_db.db")
+            sqlite = sqlite3.connect(FILE_PATH + "/sqlite/accounts_db.db", check_same_thread=False)
         except:
             print(write_log(f"\n{Fore.RED}Sqlite failed connecting to database_init"))
         
+        cursor = sqlite.cursor()
+
         print(write_log(f"\n{Fore.GREEN}Sqlite initialized"))
 
-        sqlite.close() # Close the sqlite connection
 
     def wait_client(self):
         """
@@ -161,13 +163,6 @@ class client_handler:
             Input: None
             Output: Register client / Client connected
         """
-
-        try:
-            sqlite = sqlite3.connect(FILE_PATH + "/sqlite/accounts_db.db")    # Connect to our database_init
-        except:
-            print(write_log(f"\n{Fore.RED}Sqlite failed connecting to database_init"))   # If connection failed, print error
-
-        cursor = sqlite.cursor()  # Create cursor for database_init
         
         try:
             userdata = self.client_socket.recv(200).decode().split("EMAIL") # Get our login info from client
@@ -232,12 +227,6 @@ class client_handler:
             Output: Write new user to database_init
         """
         userdata = userdata.split("|")
-        try:
-            sqlite = sqlite3.connect(FILE_PATH + "/sqlite/accounts_db.db")
-        except:
-            print(write_log(f"\n{Fore.RED}Sqlite failed connecting to database_init"))
-
-        cursor = sqlite.cursor() # Get cursor for the database
 
         cursor.execute("SELECT * FROM accounts WHERE email=?", (userdata[0],))
 
