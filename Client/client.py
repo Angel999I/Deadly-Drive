@@ -119,24 +119,28 @@ class event_handler:
                 self.ui.files_line_edit_commands.setText("")
                 self.download_file(command[9:])
 
-        elif command[:6] == 'upload':
-            try:
-                self.client.client_socket.send(command.encode())
+        elif command == 'upload':
+
+                filename = QtWidgets.QFileDialog.getOpenFileName()
+                self.client.client_socket.send((command + " " + os.path.basename(filename[0])).encode())
                 self.ui.files_line_edit_commands.setText("")
-                self.upload_file(command[7:])
-            except:
-                sys.exit()
+                self.upload_file(filename[0])
+
 
         elif command == 'test':
-            test = QtWidgets.QFileDialog.getOpenFileName()
+            try:
+                test = QtWidgets.QFileDialog.getOpenFileName()
+                self.client.client_socket.send(("upload " + os.path.basename(test[0])).encode())
+                self.ui.files_line_edit_commands.setText("")
+                self.upload_file(test[0])
+            except:
+                sys.exit()
 
         else:
             self.ui.files_line_edit_commands.setText("")
 
 
     def upload_file(self, filename):
-        filename = "Files/" + filename
-
         try:
             file = open(filename, "rb")
         except:
@@ -146,9 +150,11 @@ class event_handler:
         
         self.client.client_socket.send(str(os.path.getsize(filename)).encode())
 
+        print(os.path.getsize(filename))
+
         self.client.client_socket.recv(10)
 
-        self.client.client_socket.sendfile(file, 0)
+        print(self.client.client_socket.sendfile(file, 0))
 
         file.close()
 

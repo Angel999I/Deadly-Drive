@@ -3,3 +3,4 @@ __pycache__
 Server/Files
 *.ini
 *.log
+.vscode
