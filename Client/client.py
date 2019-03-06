@@ -154,7 +154,10 @@ class event_handler:
 
         self.client.client_socket.recv(10)
 
-        print(self.client.client_socket.sendfile(file, 0))
+        try:
+            print(self.client.client_socket.sendfile(file, 0))
+        except:
+            raise Exception("failed uploading file to server")
 
         file.close()
 
@@ -176,6 +179,7 @@ class event_handler:
         file = open(filename, "wb")
         downloaded_file_size = 1
         data = self.client.client_socket.recv(BUFFER_SIZE)
+        
         while data.find(b"FINISHED") == -1:
             self.progress(downloaded_file_size, file_size)
             file.write(data)

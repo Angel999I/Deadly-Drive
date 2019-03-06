@@ -140,6 +140,7 @@ class client_handler:
         # Make the socket and address public through out the class
         self.client_socket = client_socket
         self.client_address = client_address
+        Thread(target=self.timeout, daemon=True).start()
 
     def client_disconnect(self):
         """
@@ -153,8 +154,12 @@ class client_handler:
         try:
             self.client_socket.close()  # Close the socket
         except:
-            self.client_disconnect()
+            pass
         sys.exit()  # Close the thread
+
+    def timeout(self):
+        time.sleep(10)
+        self.client_socket.close()
 
     def login_client(self):
         """
@@ -360,9 +365,13 @@ class client_handler:
         start_time = time.time()
         while file_size != downloaded_file_size:
             try:
+                timeout = Thread(target=self.timeout,daemon=true)
+                timeout.start()
                 file.write(self.client_socket.recv(BUFFER_SIZE))
             except:
                 self.client_disconnect()
+            
+            timeout.exit();
             downloaded_file_size = os.path.getsize(filename)
 
         file.close()
