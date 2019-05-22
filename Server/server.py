@@ -94,10 +94,13 @@ class server:
         """
 
         while True:
-            if input().lower() == "exit" or input().lower() == "/exit":
+            cmd = input()
+            if cmd.lower() == "exit" or cmd.lower() == "/exit":
                 log_file.close()
                 try:
                     self.client_socket.close()
+                except: pass
+                try:
                     self.server_socket.close()
                 except: pass
                 os._exit(1)
