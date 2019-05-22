@@ -142,7 +142,6 @@ class client_handler:
         # Make the socket and address public through out the class
         self.client_socket = client_socket
         self.client_address = client_address
-        Thread(target=self.timeout, daemon=True).start()
 
     def client_disconnect(self):
         """
