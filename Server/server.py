@@ -16,7 +16,6 @@ Programmer: Omer Benisty
 """
 import os
 import sys
-import dropbox
 import time
 import datetime
 import smtplib
