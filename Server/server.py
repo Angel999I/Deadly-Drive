@@ -14,433 +14,146 @@ Programmer: Omer Benisty
   \/____/   \/_____/   \/_/\/_/   \/____/   \/_____/   \/_____/ 
                                                                 
 """
+
 import os
+import pickle
 import sys
 import time
-import datetime
 import smtplib
-import sqlite3
 import uuid
-import configparser
+import colorama
+import ServerUI
+import datetime
+
+#Extended Files
+from ClientHandler import *
+from EventHandler import *
 
 from socket import *
-from colorama import Fore, Back, Style
-from colorama import init as colorama
 from threading import Thread, active_count
 from urllib.request import urlopen
-
-FILE_PATH = os.path.dirname(os.path.abspath(__file__))
-
-MAX_FILE_NAME_LENGTH = 255  # Max file name length for file name transfer
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 HOST = '0.0.0.0'        # Set the server host to any IP adrress
-PORT = 6969  # Set the desired port
+PORT = 6969             # Set the desired port
 BUFFER_SIZE = 1024 * 1000
 
-ADDRESS = (HOST, PORT)  # Tuple of ip address and port
+ADDRESS = (HOST, PORT)  # Tuple of IP address and port
 
-def write_log(log):
-    """
-    Description: Write log of the server
-    I/O:
-        Input: log
-        Output: Log text file
-    """
-    
-    log_finished = log
-
-    for x in range(0, 100):
-        log_finished = log_finished.replace("[" + str(x) + 'm', "")
-            
-    log_file.write(log_finished + "  [" + str(datetime.datetime.now()) + "]")
-    return log
-
-class server:
+class Server:
     def __init__(self):
-        # Wait for client
-        self.server_socket = socket(AF_INET, SOCK_STREAM)    # Define client socket for socket work
-        self.server_socket.bind(ADDRESS)                     # Bind our socket to our address
-        self.server_socket.listen(2)                         # Max queue 2
-        colorama()                                           # Init colorama fr colored text
+        """
+        Initialize the server and his UI
+        """
 
-        # Server input thread for /exit command
-        Thread(target=self.server_input, daemon=True).start()
-
-        # Init database_init
-        self.database_init()
-
-        # Make files folder for users files storage
+        # If folder files not exist, create it
         if not os.path.exists("Files"):
-            os.mkdir("Files")
+            os.mkdir("Files") 
 
-        config = configparser.ConfigParser()
+        # Init User Interface
+        self.app = QtWidgets.QApplication(sys.argv)
+        MainWindow = QtWidgets.QMainWindow()
+        self.ui = ServerUI.Ui_MainWindow()
+        self.ui.setupUi(MainWindow)
+        MainWindow.show()
 
-        ip = urlopen('http://ip.42.pl/raw').read().decode()
-        config['Vars'] = {'IPAddress': ip}
+        # Setup UI events 
+        self.eventHandler = EventHandler(self)
+        self.eventHandler.register_events_handlers()
 
-        with open('config.ini', 'w') as configfile:
-            config.write(configfile)     
+        sys.exit(self.app.exec_()) 
 
-        # Wait for client connection
-        self.wait_client()
-
-    def server_input(self):
+    def server_execute(self):
         """
-        Description: This method runs on a seprate thread, So we can get input from our server terminal
-        I/O:
-            Input: None
-            Output: 
-                COMMANDS: /exit Exit the program and close the socket
+        Validate the server password and launch it
         """
 
-        while True:
-            cmd = input()
-            if cmd.lower() == "exit" or cmd.lower() == "/exit":
-                log_file.close()
-                try:
-                    self.client_socket.close()
-                except: pass
-                try:
-                    self.server_socket.close()
-                except: pass
-                os._exit(1)
+        # Get the password from the UI element
+        password = self.ui.lineEdit.text()
 
-    def database_init(self):
-        """
-        Description: Init database for accounts use
-        I/O:
-            Input: None
-            Output: Print if database was init succesfully
-        """
-        global sqlite, cursor
+        # Verify the password length
+        if len(password) < 8:
+            self.ui.lineEdit.setText("")
+            self.ui.lineEdit.setPlaceholderText("   Password too short, at least 8 characters")
+            return
+
+        # Save the hashed password
+        self.password = hashlib.sha256(password.encode())
+
         try:
-            sqlite = sqlite3.connect(FILE_PATH + "/sqlite/accounts_db.db", check_same_thread=False)
+            # Get the machine server ip and show it to the user
+            ip = urlopen('http://ip.42.pl/raw').read().decode()
+            self.ui.labelIP.setText(ip)
         except:
-            print(write_log(f"\n{Fore.RED}Sqlite failed connecting to database_init"))
+            self.ui.labelIP.setText("No internet, only local work")
+
+        # Prepare sockets
+        self.serverSocket = socket(AF_INET, SOCK_STREAM)  
+        self.serverSocket.bind(ADDRESS)                      
+        self.serverSocket.listen(2)                             
         
-        cursor = sqlite.cursor()
+        # Set the status label to "On"
+        self.ui.labelStatus.setText("On")
 
-        print(write_log(f"\n{Fore.GREEN}Sqlite initialized"))
+        # Disable the password line edit
+        self.ui.lineEdit.setEnabled(False)
 
+        # Start waiting for clients
+        Thread(target=self.wait_client, daemon=True).start() 
+
+        self.eventHandler.register_start_button_as_stop()
+
+        # Set the start button text to stop
+        self.ui.startButton.setText("Stop") 
+
+    def server_stop(self):
+
+        # Close the server socket
+        self.serverSocket.close()
+
+        # Set the ui elements back
+        self.ui.lineEdit.setEnabled(True)
+        self.ui.labelStatus.setText("Off")
+        self.ui.startButton.setText("Start")
+        self.ui.labelIP.setText("")
+
+        # Register the stop button as the start button again
+        self.eventHandler.register_stop_button_as_start()
 
     def wait_client(self):
         """
-        Description: Wait for a client connection
-        I/O:
-            Input: None
-            Output: client_socket, client_address; Calls to get_client_request()
-        """
-        print(write_log(f"\n{Fore.RED}[Deadly]{Fore.LIGHTGREEN_EX} Waiting for client...."))
-        while True:            
-            client_socket, client_address = self.server_socket.accept()
-
-            print(write_log(f"\n{Fore.WHITE}IP: {client_address[0]}\n{Fore.YELLOW}Client connected"))  # Print info on the client connected
-            Thread(target=client_handler(client_socket, client_address).login_client).start()  
-       
-class client_handler:
-    def __init__(self, client_socket, client_address):
-        # Make the socket and address public through out the class
-        self.client_socket = client_socket
-        self.client_address = client_address
-
-    def client_disconnect(self):
-        """
-        Description: Disconnect from client
-        I/O:
-            Input: None
-            Output: Close the socket and thread
+        Wait for a new client and create a ClientHandler for him
         """
 
-        print(write_log(f"\n{Fore.YELLOW}({self.client_address[0]}) {Fore.RED}Disconnected"))
-        try:
-            self.client_socket.close()  # Close the socket
-        except:
-            pass
-        sys.exit()  # Close the thread
+        # Wait for a new client and get his information
+        while True:       
+            clientSocket, clientAddress = self.serverSocket.accept()
 
-    def timeout(self):
-        time.sleep(10)
-        self.client_socket.close()
+            self.write_log(f"{clientAddress} Connected")
 
-    def login_client(self):
+            # Create a ClientHandler for this specific client
+            Thread(target=ClientHandler(self, self.serverSocket, clientSocket, clientAddress).login_client, daemon=True).start()
+
+    def write_log(self, log):
         """
-        Description: Login our client to our database_init
-        I/O:
-            Input: None
-            Output: Register client / Client connected
-        """
+        Write the attached string in a log file
         
-        try:
-            userdata = self.client_socket.recv(200).decode().split("EMAIL") # Get our login info from client
-        except:
-            self.client_disconnect()
-
-        # If login info contained REGISTER, move to register department
-        if userdata[0].find("REGISTER") != -1:
-            userdata = userdata[0].replace("REGISTER", "")
-            self.register_client(userdata)
-
-        # If packet is not valid disconnect
-        if len(userdata) < 2:
-            self.client_disconnect()
-            
-        # Search our client loggin info on our database_init
-        email = (userdata[0],)
-        cursor.execute("SELECT * FROM accounts WHERE email=?", email)
-
-        password = userdata[1]
-        db_password = cursor.fetchall()
-
-        # If email not exist, tell client
-        if (db_password == []):
-            print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Logged with wrong email"))
-            try:
-                self.client_socket.send("EMAIL".encode())
-            except:
-                self.client_disconnect()
-            self.login_client()
-
-        # If password not exist, tell client
-        if password != db_password[0][1]:
-            print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Logged with wrong password"))
-            try:
-                self.client_socket.send("PASSWORD".encode())
-            except:
-                self.client_disconnect()           
-            self.login_client()
-
-        # Else log in our client 
-        else:   
-            print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Is logged in"))
-            try:
-                self.client_socket.send("TRUE".encode())
-            except:
-                self.client_disconnect()
-
-            # Declare his user id from further use
-            self.userid = db_password[0][2]
-
-            # Make his unique folder
-            if not os.path.exists("Files/" + self.userid):
-                os.mkdir("Files/" + self.userid)
-            self.get_client_request()
-
-    def register_client(self, userdata):
+        Arguments:
+            log {str} -- The log message
         """
-        Description: Register our client to database_init
-        I/O:
-            Input: userdata
-            Output: Write new user to database_init
-        """
-        userdata = userdata.split("|")
 
-        cursor.execute("SELECT * FROM accounts WHERE email=?", (userdata[0],))
+        # Print the log to the console
+        print(f"[{datetime.datetime.now()} {log}")
 
-        db_data = cursor.fetchall() # Get data that is matching the email
-
-        if (db_data != []):
-            try: 
-                self.client_socket.send("EMAIL".encode())
-            except:
-                self.client_disconnect()
-            self.login_client()
-
-        userid = str(uuid.uuid4()) # Generate userid
-        userdata = (userdata[0], userdata[1], userid, userdata[2], userdata[3]) # Make a tuple for all of our user data
-
-        cursor.execute("INSERT INTO accounts VALUES(?,?,?,?,?)", userdata)
-        sqlite.commit() # Commit account to database
-
-        try:
-            self.client_socket.send("TRUE".encode()) # Send the client a True mark for succesful register
-            print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Is a new user"))
-        except:
-            self.client_disconnect()
-
-        self.userid = userid # Make the userid public throughout the whole class
-
-        # Make folder for our client files if its not exists
-        if not os.path.exists("Files/" +  self.userid):
-            os.mkdir("Files/" +  self.userid)
-            self.get_client_request()
-
-        self.get_client_request()
+        # Open the log file
+        logFile = open("log.log","a")   
         
-    def get_client_request(self):
-        """
-        Description: Get client request
-        I/O:
-            Input: None
-            Output: client request
-        """
-        try:
-            request = self.client_socket.recv(MAX_FILE_NAME_LENGTH).decode()  # Get file name from client
-        except:
-            self.client_disconnect()
+        # Write the log to the log file
+        logFile.write(f"[{datetime.datetime.now()}] {log}")
 
-        if request == "":
-            self.client_disconnect()
-
-        self.request_verification(request)
-
-    def request_verification(self, request):
-        """
-        Description: Act by the client request. Issue a command or start transfering file
-        I/O:
-            Input: Client request
-            Output: 
-                COMMAND:
-                    /exit: Close the connection and wait for a new client
-                    /dir: Send all the file names from the server directory
-                FILENAME:
-                    Send the file name to upload_file(filename)
-        """
-
-        # If the client issued a command, check which command it is
-        request_temp = request.lower()
-        # If the client typed exit, disconnect from user
-        if request_temp == 'exit':
-            self.client_disconnect()
-        # If the client typed dir, send files list
-        elif request_temp == 'dir':
-            print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Asked for directory: {request}"))
-            requests = os.listdir("Files/" + self.userid + "/")
-            if requests == []:
-                try:
-                    self.client_socket.send("EMPTY".encode())
-                except:
-                    self.client_disconnect()
-                self.get_client_request()
-            final_file_names = ""
-            for name in requests:
-                final_file_names += name + "\n"
-            try:
-                self.client_socket.send(final_file_names.encode())
-            except:
-                self.client_disconnect()
-            self.get_client_request()
-        # If the client typed upload, download file from client
-        elif request_temp[:6] == 'upload':
-            filename = request_temp[7:]
-            self.download_file(filename)
-        # If the client typed download, upload file to client
-        elif request_temp[:8] == 'download':
-            self.upload_file(request[9:])   
-
-        else:
-            print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Executed wrong command: {request}"))
-            self.get_client_request()
-        
-    
-    def download_file(self, filename):
-        """
-        Description: Download file from our client and store it in his userid folder
-        I/O:
-            Input: filename
-            Output: File in userid folder
-        """
-        try:
-            data_temp = self.client_socket.recv(100).decode()
-        except:
-            self.client_disconnect()
-        # If the file is not found in client, report
-        if data_temp.find("FAILED") != -1:
-            print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Tried to upload a file: {filename}"))
-            self.get_client_request()
-
-        print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Started uploading file: {filename}"))
-        # Get ready for downloading the file
-        filename = "Files/" + self.userid + "/" + filename
-        file = open(filename, "wb")
-        file_size = int(data_temp)
-        print(file_size)
-        downloaded_file_size = 0
-
-        try:
-        # Send ready mark
-            self.client_socket.send("RDY".encode())
-        except:
-            self.client_disconnect()
-
-        # Count the time
-        start_time = time.time()
-        while file_size != downloaded_file_size:
-            try:
-                timeout = Thread(target=self.timeout,daemon=true)
-                timeout.start()
-                file.write(self.client_socket.recv(BUFFER_SIZE))
-            except:
-                self.client_disconnect()
-            
-            timeout.exit();
-            downloaded_file_size = os.path.getsize(filename)
-
-        file.close()
-
-        print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Uploaded file successfuly\nTime elapsed: {time.time() - start_time}"))
-
-        self.get_client_request()
-
-    def upload_file(self, filename):
-        """
-        Description: Read the file from disk and transfer it to client
-        I/O:
-            Input: filename
-            Output: file size, file binary form to client
-        """
-
-        try:
-            open("Files/" + self.userid + "/" + filename,'rb') # Try to open the desired file
-        except:  
-            try:                                                  
-                self.client_socket.send("FILE NOT FOUND".encode())
-            except:
-                self.client_disconnect()
-            print(write_log(f"\n{Fore.WHITE}IP: {self.client_address[0]}\n{Fore.YELLOW}Issued wrong file name: {filename}"))
-
-            self.get_client_request()
-
-        try:
-            self.client_socket.send("SUCCESS".encode())             # Send success note to the client
-        except:
-            self.client_disconnect()
-
-        file_size = os.path.getsize("Files/" + self.userid + "/" + filename)       # Get the file size
-        print(file_size)
-        try:
-            self.client_socket.send(str(file_size).encode())        # Send the file size to client
-        except:
-            self.client_disconnect()
-                
-        print(write_log("\n" + Fore.RED + "Transfer file to: " + Fore.GREEN + self.client_address[0] + 
-        Fore.RED + "\nFile name: " + Fore.GREEN + filename +
-        Fore.RED + "\nFile size: " + Fore.GREEN + str(file_size) + "\n")) # Give information on the file transfer                                        
-        
-        try:
-            self.client_socket.recv(10)  # Wait for the client to be ready for file transfer
-        except:
-            self.client_disconnect()
-
-        with open("Files/" + self.userid + "/" + filename,'rb') as file: 
-            try:
-                self.client_socket.sendfile(file)                                            
-            except:
-                self.client_disconnect()
-
-        try:
-            self.client_socket.send(b"FINISHED")
-        
-            self.client_socket.recv(10)  # ! For some reason the server is getting additional input, Ignore
-        except:
-            self.client_disconnect()
-
-        file.close()
-
-        print(write_log(f"\n{Fore.YELLOW}FILE TRANSFERED SUCCESSFULLY"))
-
-        self.get_client_request()
-
-log_file = open("log.log","a")        
-server()
+        # Close the log file
+        logFile.close()
+ 
+Server()
 
         
