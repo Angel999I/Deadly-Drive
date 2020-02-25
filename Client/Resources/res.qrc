@@ -1,6 +1,9 @@
 <RCC>
   <qresource prefix="Images">
+    <file>addFile.png</file>
+    <file>addFolder.png</file>
     <file>delete.png</file>
+    <file>backArrow.png</file>
     <file>3ds.png</file>
     <file>ai.png</file>
     <file>asp.png</file>
@@ -21,8 +24,8 @@
     <file>ico.png</file>
     <file>ini.png</file>
     <file>iso.png</file>
-    <file>ja.png</file>
     <file>jar.png</file>
+    <file>js.png</file>
     <file>jpg.png</file>
     <file>mkv.png</file>
     <file>mov.png</file>

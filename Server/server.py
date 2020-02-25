@@ -128,9 +128,6 @@ class Server:
         # Wait for a new client and get his information
         while True:       
             clientSocket, clientAddress = self.serverSocket.accept()
-
-            self.write_log(f"{clientAddress} Connected")
-
             # Create a ClientHandler for this specific client
             Thread(target=ClientHandler(self, self.serverSocket, clientSocket, clientAddress).login_client, daemon=True).start()
 
@@ -142,17 +139,20 @@ class Server:
             log {str} -- The log message
         """
 
-        # Print the log to the console
-        print(f"[{datetime.datetime.now()} {log}")
+        try:
+            # Print the log to the console
+            print(f"[{datetime.datetime.now()} {log}")
 
-        # Open the log file
-        logFile = open("log.log","a")   
-        
-        # Write the log to the log file
-        logFile.write(f"[{datetime.datetime.now()}] {log}")
+            # Open the log file
+            logFile = open("log.log","a")   
+            
+            # Write the log to the log file
+            logFile.write(f"\n[{datetime.datetime.now()}] {log}")
 
-        # Close the log file
-        logFile.close()
+            # Close the log file
+            logFile.close()
+        except:
+            pass
  
 Server()
 

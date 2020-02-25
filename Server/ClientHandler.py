@@ -31,6 +31,7 @@ class ClientHandler:
 
         else:
             self.clientSocket.send("TRUE".encode())
+            self.server.write_log(f"{self.clientAddress} Connected")
             self.get_client_request()
             
         
@@ -47,7 +48,8 @@ class ClientHandler:
                 request = self.clientSocket.recv(MAX_REQUEST_LENGTH).decode()
             except:
                 self.disconnect()
-                raise Exception("ClientHandler", "Error while getting client request")
+                self.server.write_log(f"{self.clientAddress} Unexpected exit")          
+                sys.exit()
 
             self.requestHandler.sort_request(request)
 

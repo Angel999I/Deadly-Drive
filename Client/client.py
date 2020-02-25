@@ -52,11 +52,18 @@ class Client:
         MainWindow = QtWidgets.QMainWindow()
         self.ui = ClientUI.Ui_MainWindow()
         self.ui.setupUi(MainWindow)
+        self.ui.folderName.setVisible(False)
+        self.ui.confirmName.setVisible(False)
+        self.ui.progressBar.setEnabled(False)
         MainWindow.show()
 
-        # Setup UI events 
-        self.eventHandler = EventHandler(self)
-        self.eventHandler.register_events_handlers()
+        try:
+            # Setup UI events 
+            self.eventHandler = EventHandler(self)
+            self.eventHandler.register_events_handlers()
+        except Exception as e:
+            self.ui.stackedWidget.setCurrentIndex(0)
+
 
         sys.exit(app.exec_())
 
@@ -96,7 +103,7 @@ class Client:
 
         # Send to the server the hashed password
         self.clientSocket.send(hashlib.sha256(password.encode()).hexdigest().encode())
-        self.clientSocket.settimeout(10)
+        self.clientSocket.settimeout(4)
 
         # Get response from the server
         response = self.clientSocket.recv(5).decode()
@@ -111,7 +118,7 @@ class Client:
         if response == "TRUE":
             self.ui.stackedWidget.setCurrentIndex(1)
             self.eventHandler.get_socket(self.clientSocket)
-            self.eventHandler.request_files("/")
+            self.eventHandler.request_files(self.eventHandler.path)
 
 
 def validate_ip(ip):
