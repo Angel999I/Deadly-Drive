@@ -107,14 +107,11 @@ class EventHandler:
 
 
     def request_files(self, directory):         
-        """Send the server request for files details in a specific directory
-        
-        Arguments:
-            directory {str} -- path of wanted files
-        
-        Raises:
-            Exception: Server didn't answer for the files request
-        """  
+        """!
+        Request the specified directory from the server
+
+        @param directory str: The specified directory
+        """
         self.index = 0 
         self.files = []
         self.remove_files_from_packages()
@@ -123,7 +120,6 @@ class EventHandler:
         
         try:
             self.files = json.loads(self.clientSocket.recv(1024).decode())
-            print(self.files)
         except:
             raise Exception("EventHandler", "Couldnt get file list")
 

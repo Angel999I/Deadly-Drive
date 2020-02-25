@@ -1,19 +1,3 @@
-r"""
-                            server.py
-
-Description: Server for downloading files from a specific directory
-
-I/O Input: Request/Output: The file asked / Information asked
-
-Programmer: Omer Benisty
-
- _____     ______     ______     _____     __         __  __    
-/\  __-.  /\  ___\   /\  __ \   /\  __-.  /\ \       /\ \_\ \   
-\ \ \/\ \ \ \  __\   \ \  __ \  \ \ \/\ \ \ \ \____  \ \____ \  
- \ \____-  \ \_____\  \ \_\ \_\  \ \____-  \ \_____\  \/\_____\ 
-  \/____/   \/_____/   \/_/\/_/   \/____/   \/_____/   \/_____/ 
-                                                                
-"""
 
 import os
 import pickle
@@ -141,7 +125,7 @@ class Server:
 
         try:
             # Print the log to the console
-            print(f"[{datetime.datetime.now()} {log}")
+            print(f"[{datetime.datetime.now()}] {log}")
 
             # Open the log file
             logFile = open("log.log","a")   
