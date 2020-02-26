@@ -1,19 +1,3 @@
-r"""
-                            client.py
-
-Description: Client for the downloading server
-
-I/O Input: Information from server, Output: File 
-
-Programmer: Omer Benisty
-
- _____     ______     ______     _____     __         __  __    
-/\  __-.  /\  ___\   /\  __ \   /\  __-.  /\ \       /\ \_\ \   
-\ \ \/\ \ \ \  __\   \ \  __ \  \ \ \/\ \ \ \ \____  \ \____ \  
- \ \____-  \ \_____\  \ \_\ \_\  \ \____-  \ \_____\  \/\_____\ 
-  \/____/   \/_____/   \/_/\/_/   \/____/   \/_____/   \/_____/ 
-                                                                
-"""
 
 from socket import *
 from enum import Enum
@@ -31,15 +15,9 @@ from threading import Thread, active_count
 PORT = 6969                  # Set the desired port
 BUFFER_SIZE = 1024 * 1000    # Set the buffer size for out packet data  
 
-class Page(Enum):
-    login = 0
-    ip = 1
-    register = 3
-    files = 4
-
 class Client:
     def __init__(self):
-        """
+        """!
         Initialize the client and his UI
         """
         
@@ -68,7 +46,7 @@ class Client:
         sys.exit(app.exec_())
 
     def connect(self):
-        """
+        """!
         Connect to the given IP and send the given password
         """
 
@@ -122,14 +100,10 @@ class Client:
 
 
 def validate_ip(ip):
-    """
-    Verify if the given string is structurally true as an IP address
-    
-    Arguments:
-        ip {str} -- IP address for checking
-    
-    Returns:
-        True/False -- If the string is an ip address return true otherwise return false
+    """!
+    Validate if the ip field input is valid
+
+    @param ip str: The ip input
     """
     try:
         if len(ip.split(".")) != 4:

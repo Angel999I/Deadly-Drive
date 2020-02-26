@@ -26,7 +26,7 @@ ADDRESS = (HOST, PORT)  # Tuple of IP address and port
 
 class Server:
     def __init__(self):
-        """
+        """!
         Initialize the server and his UI
         """
 
@@ -48,7 +48,7 @@ class Server:
         sys.exit(self.app.exec_()) 
 
     def server_execute(self):
-        """
+        """!
         Validate the server password and launch it
         """
 
@@ -91,7 +91,9 @@ class Server:
         self.ui.startButton.setText("Stop") 
 
     def server_stop(self):
-
+        """!
+        Shutdown the server
+        """
         # Close the server socket
         self.serverSocket.close()
 
@@ -105,7 +107,7 @@ class Server:
         self.eventHandler.register_stop_button_as_start()
 
     def wait_client(self):
-        """
+        """!
         Wait for a new client and create a ClientHandler for him
         """
 
@@ -116,11 +118,10 @@ class Server:
             Thread(target=ClientHandler(self, self.serverSocket, clientSocket, clientAddress).login_client, daemon=True).start()
 
     def write_log(self, log):
-        """
+        """!
         Write the attached string in a log file
-        
-        Arguments:
-            log {str} -- The log message
+
+        @param log str: The log content
         """
 
         try:

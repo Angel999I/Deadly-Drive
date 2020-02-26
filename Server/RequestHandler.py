@@ -5,6 +5,11 @@ from zipfile import ZipFile
 
 class RequestHandler:
     def __init__(self, clientHandler):
+        """!
+        Constructor of the request handler
+
+        @param clientHandler clientHandler: The clientHandler class
+        """
         self.clientHandler = clientHandler
 
         self.clientSocket = clientHandler.clientSocket
@@ -14,10 +19,10 @@ class RequestHandler:
         self.files = []
 
     def sort_request(self, request):
-        """Sort the appropriate answer by the request
-        
-        Arguments:
-            request {str} -- Request string from the client
+        """!
+        Act accordingly of the comming request
+
+        @param request str: The client request
         """
         if request.find("GETDIRECTORY") != -1:
             request = request.replace('GETDIRECTORY', "")
@@ -51,6 +56,11 @@ class RequestHandler:
             pass
 
     def get_file(self, path):
+        """!
+        Get the given file from the client and store it in the given path
+
+        @param path str: The path for file storage
+        """
         try:
             self.server.write_log(f"{self.clientAddress} Uploading file to {path}")
         except:
@@ -80,10 +90,10 @@ class RequestHandler:
         self.clientSocket.send("DONE".encode())     
 
     def send_directory(self, directory):
-        """Send all the files details in a given directory
-        
-        Arguments:
-            directory {str} -- The given directory from the client
+        """!
+        Send a list of all the files in a given directory
+
+        @param directory str: The direcotry path for transfer
         """
         files_raw = os.listdir(directory)
         directories = []
@@ -107,7 +117,11 @@ class RequestHandler:
         self.clientSocket.send(json.dumps(directories).encode())
 
     def send_file(self, filePath):
+        """!
+        Send the client the file he requested
 
+        @param filePath str: The path of the file the client requested
+        """
         self.clientSocket.send(str(os.path.getsize(filePath)).encode())
         self.clientSocket.recv(20)
         self.server.write_log(f"{self.clientAddress} Sending file " + filePath)
@@ -126,6 +140,11 @@ class RequestHandler:
             self.server.write_log(f"{self.clientAddress} Unexpected error while sending file (Maybe client disconnected?)" + filePath)
 
     def send_folder(self, folderPath):
+        """!
+        Send the client the folder he requested
+
+        @param folderPath str: The path of the requested folder
+        """
         zipFile = ZipFile("temp.zip", 'w')
         files = os.listdir(folderPath)
 
@@ -153,9 +172,12 @@ class RequestHandler:
         except:
             self.server.write_log(f"{self.clientAddress} Unexpected error while sending zip file (Maybe client disconnected?) {folderPath}")
 
-        
-
     def create_folder(self, name):
+        """!
+        Create a folder with the given name
+
+        @param name str: The folder name
+        """
         path = self.clientSocket.recv(260).decode()
 
         try:
@@ -169,7 +191,11 @@ class RequestHandler:
         self.server.write_log(f"{self.clientAddress} Created a folder in {path} with the name {name}")  
 
     def delete_folder(self, path):
+        """!
+        Delete the requested folder
 
+        @param path str: The path of the folder to delete
+        """
         try:
             shutil.rmtree(path)
             self.clientSocket.send("SUCCESS".encode())
@@ -179,7 +205,11 @@ class RequestHandler:
             self.server.write_log(f"{self.clientAddress} Error deleting a folder at {path}")
 
     def delete_file(self, path):
+        """!
+        Delete the requested file
 
+        @param path str: The path of the file to delete
+        """
         try:
             os.remove(path)
             self.clientSocket.send("SUCCESS".encode())

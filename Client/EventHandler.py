@@ -5,6 +5,11 @@ import os
 
 class EventHandler:
     def __init__(self, client):
+        """!
+        The constructor of the event handler, setup variables and an array of ui elements
+
+        @param client class: The client class
+        """
         self.client = client
         self.ui = client.ui
         self.path = "Files/"
@@ -21,9 +26,17 @@ class EventHandler:
         self.ui_activation(True)
         
     def get_socket(self, socket):
+        """!
+        Get the client socket from the client class
+
+        @param socket socket: The client socket
+        """
         self.clientSocket = socket
 
     def register_events_handlers(self):
+        """!
+        Conncet all the buttons event to their appropriate function
+        """
         self.ui.nextButton.clicked.connect(self.connect_wrapper)
         self.ui.upButton.clicked.connect(self.page_up)
         self.ui.downButton.clicked.connect(self.page_down)
@@ -33,7 +46,7 @@ class EventHandler:
         self.ui.addFile.clicked.connect(self.upload_file)
 
     def connect_wrapper(self):
-        """
+        """!
         Wrapper for the connect function for disabling lineEdit accordingly
         """
 
@@ -46,6 +59,9 @@ class EventHandler:
         self.ui.lineEditIP.setEnabled(True)
 
     def folder_back(self):
+        """!
+        Go back to the last folder, if this is the root directory do nothing
+        """
         if self.path == "Files/":
             return
 
@@ -57,6 +73,9 @@ class EventHandler:
         self.request_files(self.path)
 
     def show_folder_naming(self):
+        """!
+        Turn on or off the visibility of the line edit for folder naming in the ui
+        """
         if self.ui.folderName.isVisible():
             self.ui.folderName.setText("")
             self.ui.folderName.setVisible(False)
@@ -66,6 +85,9 @@ class EventHandler:
             self.ui.confirmName.setVisible(True)
 
     def create_folder(self):
+        """!
+        Tell the server to create a folder with the desired name
+        """
         name = self.ui.folderName.text()
 
         if len(name) > 50 or len(name) <= 0:
@@ -87,7 +109,11 @@ class EventHandler:
             self.display_message_box("Error creating folder", "Error creating this folder, please try to recreate it with a different name")
 
     def delete_folder(self, path):
+        """!
+        Ask the server to delete a folder
 
+        @param path str: The path of the folder to delete
+        """
         self.clientSocket.send(("DELETEFOLDER" + path).encode())
 
         if self.clientSocket.recv(15).decode() == "FAILED":
@@ -97,6 +123,11 @@ class EventHandler:
         self.request_files(self.path)
 
     def delete_file(self, path):
+        """!
+        Ask the server to delete a file
+
+        @param path str: The path of the file to delete
+        """
         self.clientSocket.send(("DELETEFILE" + path).encode())
 
         if self.clientSocket.recv(15).decode() == "FAILED":
@@ -129,6 +160,9 @@ class EventHandler:
         self.update_file_package()
 
     def update_file_package(self):
+        """!
+        Update the array of ui elements with the appropriate files
+        """
         i = 0
         for x in range(self.index, self.index + 7):
             try:
@@ -140,6 +174,9 @@ class EventHandler:
         self.update_ui_files()
 
     def update_ui_files(self):
+        """!
+        Toggle visibility of ui elements by how many files are in the current page
+        """
         for x in range(7):
             self.filePackageArray[x].visibility(True)
         
@@ -147,7 +184,19 @@ class EventHandler:
             if x.file == None:
                 x.visibility(False)
 
+    def ui_activation(self, state):
+        """!
+        Toggle the ui visibility by the given state
+
+        @param state bool: The given state of visibility
+        """
+        for x in self.filePackageArray:
+            x.ui_activation(state)
+
     def page_up(self):
+        """!
+        Up the file array index and go up a page, if this is the top page do nothing
+        """
         if self.index == 0:
             return
 
@@ -156,6 +205,9 @@ class EventHandler:
         self.update_file_package()
 
     def page_down(self):
+        """!
+        Down the file array index and go down a page, if this is the bottom page do nothing
+        """
         for x in self.filePackageArray:
             if x.file == None:
                 return
@@ -164,11 +216,13 @@ class EventHandler:
         self.index = self.index + 7
         self.update_file_package()
 
-    def ui_activation(self, state):
-        for x in self.filePackageArray:
-            x.ui_activation(state)
 
     def download_file(self, file):
+        """!
+        Download a file from the server
+
+        @param file file: Has the name, extension and path of the file to download
+        """
         if file.fileExt == "folder":
             fname = QtWidgets.QFileDialog.getSaveFileName(caption = "Save folder", filter = "ZIP (*.zip)")[0]
         else:
@@ -211,6 +265,9 @@ class EventHandler:
         self.ui_activation(True)
 
     def upload_file(self):
+        """!
+        Upload a file from the server using the file dialog
+        """
         fname = QtWidgets.QFileDialog.getOpenFileName(caption = "Select file", filter = "All (*.*)")[0]
         if fname == "":
             return
@@ -243,10 +300,19 @@ class EventHandler:
         self.ui_activation(True)
 
     def remove_files_from_packages(self):
+        """!
+        Remove all the files from the file package array
+        """
         for x in self.filePackageArray:
             x.remove_file()
 
     def display_message_box(self, title, content):
+        """!
+        Display a message box with the given title and content text
+
+        @param title str: The title of the message box
+        @param content str: The content for the message box
+        """
         msgBox = QtWidgets.QMessageBox()
         msgBox.setText(content)
         msgBox.setWindowTitle(title)

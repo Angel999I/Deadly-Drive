@@ -7,6 +7,14 @@ MAX_REQUEST_LENGTH = 255  # Max file name length for file name transfer
 
 class ClientHandler:
     def __init__(self, server, serverSocket, clientSocket, clientAddress):
+        """!
+        Constructor of the client handler
+
+        @param server server: The server class
+        @param serverSocket socket: The server socket
+        @param clietnSocket socket: The client socket
+        @param clientAddress str: The client address
+        """
         self.server = server
         self.serverSocket = serverSocket
         self.clientSocket = clientSocket
@@ -14,8 +22,8 @@ class ClientHandler:
         self.requestHandler = RequestHandler.RequestHandler(self)
 
     def login_client(self):
-        """
-        Compare the passwords and response to the client accordingly
+        """!
+        Compare the passwords of login and response to the client accordingly
         """
 
         # Get the client hashed password
@@ -36,11 +44,8 @@ class ClientHandler:
             
         
     def get_client_request(self):
-        """
-        Description: Get client request
-        I/O:
-            Input: None
-            Output: client request
+        """!
+        Get the client request
         """
         while True:
             
@@ -54,4 +59,7 @@ class ClientHandler:
             self.requestHandler.sort_request(request)
 
     def disconnect(self):
+        """!
+        Disconnect the client
+        """
         self.clientSocket.close()
